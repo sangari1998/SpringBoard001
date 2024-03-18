@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.zerock.mapper.PostMapper">
+
+	<select id="selectAll" resultType="org.zerock.domain.PostVO">
+		<![CDATA[
+		select * from Posts order by post_id desc
+	]]>
+	</select>
+	
+	<select id="getId" resultType="Long">
+		<![CDATA[
+		select user_id from Posts where post_id = #{post_id}
+	]]>		
+	</select>
+	
+	<select id="select" resultType="org.zerock.domain.PostVO">
+		<![CDATA[
+		select * from Posts where post_id = #{post_id}
+	]]>
+	</select>
+	
+	<insert id="insert">
+		<selectKey keyProperty="post_id" order="BEFORE" resultType="Long">
+			select posts_seq.nextval from dual
+		</selectKey>
+		insert into posts(post_id,user_id,username,title,content,created_at,updated_at,readcount,likes)
+		values (#{post_id},#{user_id},#{username},#{title},#{content},sysdate,null,0,0)
+	</insert>
+	
+	<update id="update">
+		update posts set title = #{title} , content = #{content} , updated_at = sysdate where post_id = #{post_id}
+	</update>
+	
+	<delete id="delete">
+		delete from posts where post_id = #{post_id}
+	</delete>
+	
+	<select id="selectSearch" resultType="org.zerock.domain.PostVO">
+			<![CDATA[
+		SELECT * FROM posts WHERE title LIKE '%' || #{str} || '%'
+	]]>
+	</select>
+	
+	<update id="readcount">
+		update posts set readcount = readcount+1 where post_id = #{post_id}
+	</update>
+	
+<select id="getPage" resultType="org.zerock.domain.PostVO">
+    <![CDATA[
+    select 
+        post_id, user_id, username, title, content, created_at, updated_at, readcount, likes
+    from (
+        select /*+INDEX_DESC(idx_posts_user_id) */
+            rownum as rnum, post_id, user_id, username, title, content, created_at, updated_at, readcount, likes
+        from (
+            select 
+                post_id, user_id, username, title, content, created_at, updated_at, readcount, likes
+            from 
+                posts
+            order by 
+                created_at desc
+        ) where rownum <= #{pageNum} * #{amount}
+    ) where rnum > (#{pageNum} -1) * #{amount}
+    ]]>
+</select>
+	
+	<select id="getPageCount" resultType="int">
+		select count(*) from posts where post_id > 0
+	</select>
+	
+</mapper>
+
